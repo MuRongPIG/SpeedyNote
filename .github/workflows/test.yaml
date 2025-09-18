@@ -1,0 +1,127 @@
+name: build-test
+ # Controls when the action will run. Triggers the workflow on push or pull request
+ # events but only for the master branch
+on:
+   push:
+     branches: [ main ]
+   pull_request:
+     branches: [ main ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+   # This workflow contains a single job called "build"
+   build:
+     # The type of runner that the job will run on
+     runs-on: ubuntu-24.04
+ 
+     # Steps represent a sequence of tasks that will be executed as part of the job
+     steps:
+     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+     - uses: actions/checkout@v3
+
+     - name: Delete old release assets
+       uses: mknejp/delete-release-assets@v1
+       with:
+         token: ${{ github.token }}
+         tag: nightly # This may also be of the form 'refs/tags/staging'
+         assets: '*'
+
+     # Runs a single command using the runners shell
+     - name: Download Source Code
+       run: git clone https://github.com/alpha-liu-01/SpeedyNote.git
+
+     - name: Build for Ubuntu ARM64/Debian ARM64
+       uses: actions/checkout@v3 # Required to mount the Github Workspace to a volume 
+     - uses: addnab/docker-run-action@v3
+       with:
+         image: ubuntu:latest
+         options: --platform arm64 -v ${{ github.workspace }}:/work 
+         run: |
+          sudo apt install bash libqt6core6t64 libqt6gui6t64 libqt6widgets6t64 libqt6multimedia6 libpoppler-qt6-3t64 libsdl2-2.0-0 python3-nautilus -y -q
+          sudo apt install qt6-multimedia-dev -y -q
+          sudo apt install cmake make pkg-config qt6-base-dev libqt6gui6t64 libqt6widgets6t64 qt6-multimedia-dev qt6-tools-dev libpoppler-qt6-dev libsdl2-dev -y -q
+          chmod +x /work/SpeedyNote/build-package.sh
+          cd /work/SpeedyNote
+          bash build-package.sh
+
+     - name: Build for RedHat ARM64/Fedora ARM64
+       uses: actions/checkout@v3 # Required to mount the Github Workspace to a volume 
+     - uses: addnab/docker-run-action@v3
+       with:
+         image: fedora:latest
+         options: --platform arm64 -v ${{ github.workspace }}:/work 
+         run: |
+          sudo dnf install bash qt6-qtbase qt6-qtmultimedia poppler-qt6 SDL2 -y 
+          sudo dnf install cmake make pkgconf qt6-qtbase-devel qt6-qtmultimedia-devel qt6-qttools-devel poppler-qt6-devel SDL2-devel -y 
+          chmod +x /work/SpeedyNote/build-package.sh
+          cd /work/SpeedyNote
+          bash build-package.sh
+
+     - name: Build for Arch Linux ARM64
+       uses: actions/checkout@v3 # Required to mount the Github Workspace to a volume 
+     - uses: addnab/docker-run-action@v3
+       with:
+         image: archlinux:latest
+         options: --platform arm64 -v ${{ github.workspace }}:/work 
+         run: |
+          sudo pacman -S bash qt6-base qt6-multimedia poppler-qt6 sdl2-compat --noconfirm
+          sudo pacman -S cmake make pkgconf qt6-base qt6-multimedia qt6-tools poppler-qt6 sdl2-compat --noconfirm
+          chmod +x /work/SpeedyNote/build-package.sh
+          cd /work/SpeedyNote
+          bash build-package.sh
+
+     - name: Build for Alpine Linux ARM64
+       uses: actions/checkout@v3 # Required to mount the Github Workspace to a volume 
+     - uses: addnab/docker-run-action@v3
+       with:
+         image: alpine:latest
+         options: --platform arm64 -v ${{ github.workspace }}:/work 
+         run: |
+          sudo apk add qt6-qtbase qt6-qtmultimedia poppler-qt6 sdl2
+          sudo apk add cmake make pkgconf qt6-qtbase-dev qt6-qtmultimedia-dev qt6-qttools-dev poppler-qt6-dev sdl2-dev
+          cd /work/SpeedyNote
+          bash build-package.sh
+
+     - name: Upload Release Assets for Ubuntu ARM64/Debian ARM64
+       id: upload-release-assets-deb
+       uses: actions/upload-release-asset@v1
+       env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       with:
+         upload_url: https://uploads.github.com/repos/MuRongPIG/SpeedyNote/releases/245808206/assets{?name,label}
+         asset_path: ${{ github.workspace }}/work/*-nightly-0_aarch64.deb
+         asset_name: speedynote_nightly_aarch64.deb
+         asset_content_type: application/octet-stream
+
+     - name: Upload Release Assets for RedHat ARM64/Fedora ARM64
+       id: upload-release-assets-rpm
+       uses: actions/upload-release-asset@v1
+       env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       with:
+         upload_url: https://uploads.github.com/repos/MuRongPIG/SpeedyNote/releases/245808206/assets{?name,label}
+         asset_path: ${{ github.workspace }}/work/*-nightly-0_aarch64.rpm
+         asset_name: speedynote_nightly_aarch64.rpm
+         asset_content_type: application/octet-stream
+
+     - name: Upload Release Assets for Arch Linux ARM64
+       id: upload-release-assets-pkg
+       uses: actions/upload-release-asset@v1
+       env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       with:
+         upload_url: https://uploads.github.com/repos/MuRongPIG/SpeedyNote/releases/245808206/assets{?name,label}
+         asset_path: ${{ github.workspace }}/work/*-nightly-0_aarch64.pkg.tar.zst
+         asset_name: speedynote_nightly_aarch64.pkg.tar.zst
+         asset_content_type: application/octet-stream
+
+     - name: Upload Release Assets for Alpine Linux ARM64
+       id: upload-release-assets-apk
+       uses: actions/upload-release-asset@v1
+       env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       with:
+         upload_url: https://uploads.github.com/repos/MuRongPIG/SpeedyNote/releases/245808206/assets{?name,label}
+         asset_path: ${{ github.workspace }}/work/*-nightly-0_aarch64.apk
+         asset_name: speedynote_nightly_aarch64.apk
+         asset_content_type: application/octet-stream
