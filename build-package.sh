@@ -12,11 +12,12 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+TIME=$(date +'%Y%m%d%H%M%S')
+
 # Configuration
 PKGNAME="speedynote"
-PKGVER="0.9.3"
-PKGREL="1"
-PKGARCH=$(uname -m)
+PKGVER="$TIME-nightly"
+PKGREL="0"
 MAINTAINER="SpeedyNote Team"
 DESCRIPTION="A fast note-taking application with PDF annotation support and controller input"
 URL="https://github.com/alpha-liu-01/SpeedyNote"
@@ -148,16 +149,16 @@ get_dependencies() {
     local format=$1
     case $format in
         deb)
-            echo "libqt6core6t64, libqt6gui6t64, libqt6widgets6t64, libpoppler-qt6-3t64, libsdl2-2.0-0, libasound2"
+            echo "libqt6core6t64, libqt6gui6t64, libqt6widgets6t64, libqt6multimedia6, libpoppler-qt6-3t64, libsdl2-2.0-0, python3-nautilus | nautilus-python"
             ;;
         rpm)
-            echo "qt6-qtbase, poppler-qt6, SDL2, alsa-lib"
+            echo "qt6-qtbase, qt6-qtmultimedia, poppler-qt6, SDL2"
             ;;
         arch)
-            echo "qt6-base, poppler-qt6, sdl2-compat, alsa-lib"
+            echo "qt6-base, qt6-multimedia, poppler-qt6, sdl2-compat"
             ;;
         apk)
-            echo "qt6-qtbase, poppler-qt6, sdl2, alsa-lib"
+            echo "qt6-qtbase, qt6-qtmultimedia, poppler-qt6, sdl2"
             ;;
     esac
 }
@@ -167,16 +168,16 @@ get_build_dependencies() {
     local format=$1
     case $format in
         deb)
-            echo "cmake, make, pkg-config, qt6-base-dev, libqt6gui6t64, libqt6widgets6t64, qt6-tools-dev, libpoppler-qt6-dev, libsdl2-dev, libasound2-dev"
+            echo "cmake, make, pkg-config, qt6-base-dev, libqt6gui6t64, libqt6widgets6t64, qt6-multimedia-dev, qt6-tools-dev, libpoppler-qt6-dev, libsdl2-dev"
             ;;
         rpm)
-            echo "cmake, make, pkgconf, qt6-qtbase-devel, qt6-qttools-devel, poppler-qt6-devel, SDL2-devel, alsa-lib-devel"
+            echo "cmake, make, pkgconf, qt6-qtbase-devel, qt6-qtmultimedia-devel, qt6-qttools-devel, poppler-qt6-devel, SDL2-devel"
             ;;
         arch)
-            echo "cmake, make, pkgconf, qt6-base, qt6-tools, poppler-qt6, sdl2-compat, alsa-lib"
+            echo "cmake, make, pkgconf, qt6-base, qt6-multimedia, qt6-tools, poppler-qt6, sdl2-compat"
             ;;
         apk)
-            echo "cmake, make, pkgconf, qt6-qtbase-dev, qt6-qttools-dev, poppler-qt6, poppler-qt5-dev, sdl2-dev, alsa-lib-dev"
+            echo "cmake, make, pkgconf, qt6-qtbase-dev, qt6-qtmultimedia-dev, qt6-qttools-dev, poppler-qt5-dev, sdl2-dev"
             ;;
     esac
 }
@@ -258,7 +259,7 @@ build_project() {
     # Compile translations if lrelease is available
     if command_exists lrelease; then
         echo -e "${YELLOW}Compiling translation files...${NC}"
-        # lrelease ./resources/translations/app_zh.ts ./resources/translations/app_fr.ts ./resources/translations/app_es.ts
+        lrelease ./resources/translations/app_zh.ts ./resources/translations/app_fr.ts ./resources/translations/app_es.ts
         cp resources/translations/*.qm build/ 2>/dev/null || true
     fi
     
@@ -296,127 +297,127 @@ MimeType=application/pdf;application/x-speedynote-package;
 EOF
 }
 
-# Function to create PDF-to-SPN desktop action file (REMOVED - using launcher instead)
-# create_pdf_action_file() {
-#     local action_file="$1"
-#     cat > "$action_file" << EOF
-# [Desktop Entry]
-# Version=1.0
-# Type=Application
-# Name=Create SpeedyNote Package
-# Comment=Create a SpeedyNote package from PDF
-# Exec=speedynote --create-new %F
-# Icon=speedynote
-# Terminal=false
-# StartupNotify=true
-# Categories=Office;Education;
-# Keywords=notes;pdf;annotation;package;create;
-# MimeType=application/pdf;
-# NoDisplay=true
-# EOF
-# }
+# Function to create PDF-to-SPN desktop action file
+create_pdf_action_file() {
+    local action_file="$1"
+    cat > "$action_file" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Create SpeedyNote Package
+Comment=Create a SpeedyNote package from PDF
+Exec=speedynote --create-new %F
+Icon=speedynote
+Terminal=false
+StartupNotify=true
+Categories=Office;Education;
+Keywords=notes;pdf;annotation;package;create;
+MimeType=application/pdf;
+NoDisplay=true
+EOF
+}
 
-# Function to create SPN template file for "New" context menu (REMOVED - using launcher instead)
-# create_spn_template() {
-#     local template_file="$1"
-#     # Create a minimal .spn template file that file managers can copy
-#     echo "Contents" > "$template_file"
-# }
+# Function to create SPN template file for "New" context menu
+create_spn_template() {
+    local template_file="$1"
+    # Create a minimal .spn template file that file managers can copy
+    echo "Contents" > "$template_file"
+}
 
-# Function to create file templates for "New" context menu (REMOVED - using launcher instead)
-# create_file_templates() {
-#     local pkg_dir="$1"
-#     
-#     # Create template directory
-#     mkdir -p "$pkg_dir/usr/share/templates"
-#     
-#     # Create .spn template file
-#     create_spn_template "$pkg_dir/usr/share/templates/Empty SpeedyNote Package.spn"
-#     
-#     # Create desktop file for template (KDE)
-#     cat > "$pkg_dir/usr/share/templates/Empty SpeedyNote Package.desktop" << 'EOF'
-# [Desktop Entry]
-# Name=SpeedyNote Package
-# Name[es]=Paquete SpeedyNote
-# Name[fr]=Package SpeedyNote
-# Name[zh]=SpeedyNote 包
-# Comment=Create a new SpeedyNote package
-# Comment[es]=Crear un nuevo paquete SpeedyNote
-# Comment[fr]=Créer un nouveau package SpeedyNote
-# Comment[zh]=创建新的 SpeedyNote 包
-# URL=Empty SpeedyNote Package.spn
-# Type=Link
-# Icon=speedynote
-# EOF
-# 
-#     # Create Nautilus template
-#     mkdir -p "$pkg_dir/usr/share/nautilus-python/extensions"
-#     cat > "$pkg_dir/usr/share/nautilus-python/extensions/speedynote_template.py" << 'EOF'
-# #!/usr/bin/env python3
-# """
-# Nautilus extension to add SpeedyNote Package to "New Document" menu
-# """
-# 
-# import os
-# import subprocess
-# from gi.repository import Nautilus, GObject, Gio
-# 
-# class SpeedyNoteTemplateProvider(GObject.GObject, Nautilus.MenuProvider):
-#     def __init__(self):
-#         super().__init__()
-# 
-#     def get_background_items(self, window, current_folder):
-#         """Add SpeedyNote Package to right-click background menu"""
-#         if not current_folder:
-#             return []
-# 
-#         # Create menu item
-#         item = Nautilus.MenuItem(
-#             name='SpeedyNoteTemplate::create_spn',
-#             label='SpeedyNote Package',
-#             tip='Create a new SpeedyNote package'
-#         )
-#         
-#         # Connect callback
-#         item.connect('activate', self._create_spn_package, current_folder)
-#         
-#         # Create submenu for "New Document"
-#         submenu = Nautilus.Menu()
-#         submenu.append_item(item)
-#         
-#         # Create parent menu item
-#         parent_item = Nautilus.MenuItem(
-#             name='SpeedyNoteTemplate::new_document',
-#             label='New Document',
-#             tip='Create new documents'
-#         )
-#         parent_item.set_submenu(submenu)
-#         
-#         return [parent_item]
-# 
-#     def _create_spn_package(self, menu, current_folder):
-#         """Create a new SpeedyNote package"""
-#         folder_path = current_folder.get_location().get_path()
-#         
-#         # Generate unique filename
-#         base_name = "New SpeedyNote Package"
-#         counter = 1
-#         spn_path = os.path.join(folder_path, f"{base_name}.spn")
-#         
-#         while os.path.exists(spn_path):
-#             spn_path = os.path.join(folder_path, f"{base_name} {counter}.spn")
-#             counter += 1
-#         
-#         try:
-#             # Create SpeedyNote package using silent mode
-#             subprocess.run(['speedynote', '--create-silent', spn_path], check=True)
-#         except (subprocess.CalledProcessError, FileNotFoundError):
-#             # Fallback: create minimal template
-#             with open(spn_path, 'w') as f:
-#                 f.write("Contents")
-# EOF
-#     chmod +x "$pkg_dir/usr/share/nautilus-python/extensions/speedynote_template.py"
-# }
+# Function to create file templates for "New" context menu
+create_file_templates() {
+    local pkg_dir="$1"
+    
+    # Create template directory
+    mkdir -p "$pkg_dir/usr/share/templates"
+    
+    # Create .spn template file
+    create_spn_template "$pkg_dir/usr/share/templates/Empty SpeedyNote Package.spn"
+    
+    # Create desktop file for template (KDE)
+    cat > "$pkg_dir/usr/share/templates/Empty SpeedyNote Package.desktop" << 'EOF'
+[Desktop Entry]
+Name=SpeedyNote Package
+Name[es]=Paquete SpeedyNote
+Name[fr]=Package SpeedyNote
+Name[zh]=SpeedyNote 包
+Comment=Create a new SpeedyNote package
+Comment[es]=Crear un nuevo paquete SpeedyNote
+Comment[fr]=Créer un nouveau package SpeedyNote
+Comment[zh]=创建新的 SpeedyNote 包
+URL=Empty SpeedyNote Package.spn
+Type=Link
+Icon=speedynote
+EOF
+
+    # Create Nautilus template
+    mkdir -p "$pkg_dir/usr/share/nautilus-python/extensions"
+    cat > "$pkg_dir/usr/share/nautilus-python/extensions/speedynote_template.py" << 'EOF'
+#!/usr/bin/env python3
+"""
+Nautilus extension to add SpeedyNote Package to "New Document" menu
+"""
+
+import os
+import subprocess
+from gi.repository import Nautilus, GObject, Gio
+
+class SpeedyNoteTemplateProvider(GObject.GObject, Nautilus.MenuProvider):
+    def __init__(self):
+        super().__init__()
+
+    def get_background_items(self, window, current_folder):
+        """Add SpeedyNote Package to right-click background menu"""
+        if not current_folder:
+            return []
+
+        # Create menu item
+        item = Nautilus.MenuItem(
+            name='SpeedyNoteTemplate::create_spn',
+            label='SpeedyNote Package',
+            tip='Create a new SpeedyNote package'
+        )
+        
+        # Connect callback
+        item.connect('activate', self._create_spn_package, current_folder)
+        
+        # Create submenu for "New Document"
+        submenu = Nautilus.Menu()
+        submenu.append_item(item)
+        
+        # Create parent menu item
+        parent_item = Nautilus.MenuItem(
+            name='SpeedyNoteTemplate::new_document',
+            label='New Document',
+            tip='Create new documents'
+        )
+        parent_item.set_submenu(submenu)
+        
+        return [parent_item]
+
+    def _create_spn_package(self, menu, current_folder):
+        """Create a new SpeedyNote package"""
+        folder_path = current_folder.get_location().get_path()
+        
+        # Generate unique filename
+        base_name = "New SpeedyNote Package"
+        counter = 1
+        spn_path = os.path.join(folder_path, f"{base_name}.spn")
+        
+        while os.path.exists(spn_path):
+            spn_path = os.path.join(folder_path, f"{base_name} {counter}.spn")
+            counter += 1
+        
+        try:
+            # Create SpeedyNote package using silent mode
+            subprocess.run(['speedynote', '--create-silent', spn_path], check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Fallback: create minimal template
+            with open(spn_path, 'w') as f:
+                f.write("Contents")
+EOF
+    chmod +x "$pkg_dir/usr/share/nautilus-python/extensions/speedynote_template.py"
+}
 
 # Function to create MIME type definition for .spn files
 create_mime_xml() {
@@ -439,86 +440,86 @@ create_mime_xml() {
 EOF
 }
 
-# Function to create file manager integration scripts (REMOVED - using launcher instead)
-# create_file_manager_integration() {
-#     local pkg_dir="$1"
-#     
-#     # Create Nautilus (GNOME) script for "Create SpeedyNote Package"
-#     mkdir -p "$pkg_dir/usr/share/nautilus/scripts"
-#     cat > "$pkg_dir/usr/share/nautilus/scripts/Create SpeedyNote Package" << 'EOF'
-# #!/bin/bash
-# # Nautilus script to create SpeedyNote package from PDF
-# 
-# if [ -n "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
-#     while IFS= read -r file; do
-#         if [[ "$file" == *.pdf ]]; then
-#             # Extract directory and filename
-#             dir=$(dirname "$file")
-#             basename=$(basename "$file" .pdf)
-#             spn_path="$dir/$basename.spn"
-#             
-#             # Create SpeedyNote package
-#             speedynote --create-silent "$spn_path" "$file"
-#         fi
-#     done <<< "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
-# fi
-# EOF
-#     chmod +x "$pkg_dir/usr/share/nautilus/scripts/Create SpeedyNote Package"
-#     
-#     # Create Dolphin (KDE) service menu
-#     mkdir -p "$pkg_dir/usr/share/kservices5/ServiceMenus"
-#     cat > "$pkg_dir/usr/share/kservices5/ServiceMenus/speedynote-create-package.desktop" << 'EOF'
-# [Desktop Entry]
-# Type=Service
-# X-KDE-ServiceTypes=KonqPopupMenu/Plugin
-# MimeType=application/pdf;
-# Actions=CreateSpeedyNotePackage;
-# 
-# [Desktop Action CreateSpeedyNotePackage]
-# Name=Create SpeedyNote Package
-# Name[es]=Crear Paquete SpeedyNote
-# Name[fr]=Créer un Package SpeedyNote
-# Name[zh]=创建 SpeedyNote 包
-# Icon=speedynote
-# Exec=sh -c 'dir=$(dirname "%f"); base=$(basename "%f" .pdf); speedynote --create-silent "$dir/$base.spn" "%f"'
-# EOF
-#     
-#     # Create Thunar (XFCE) custom action
-#     mkdir -p "$pkg_dir/usr/share/Thunar/sendto"
-#     cat > "$pkg_dir/usr/share/Thunar/sendto/speedynote-create-package.desktop" << 'EOF'
-# [Desktop Entry]
-# Version=1.0
-# Type=Application
-# Name=Create SpeedyNote Package
-# Name[es]=Crear Paquete SpeedyNote
-# Name[fr]=Créer un Package SpeedyNote
-# Name[zh]=创建 SpeedyNote 包
-# Comment=Create a SpeedyNote package from PDF
-# Icon=speedynote
-# Exec=sh -c 'for file in %F; do if [[ "$file" == *.pdf ]]; then dir=$(dirname "$file"); base=$(basename "$file" .pdf); speedynote --create-silent "$dir/$base.spn" "$file"; fi; done'
-# MimeType=application/pdf;
-# Categories=Office;
-# EOF
-# 
-#     # Create PCManFM (LXDE/LXQt) action
-#     mkdir -p "$pkg_dir/usr/share/file-manager/actions"
-#     cat > "$pkg_dir/usr/share/file-manager/actions/speedynote-create-package.desktop" << 'EOF'
-# [Desktop Entry]
-# Type=Action
-# Name=Create SpeedyNote Package
-# Name[es]=Crear Paquete SpeedyNote
-# Name[fr]=Créer un Package SpeedyNote
-# Name[zh]=创建 SpeedyNote 包
-# Comment=Create a SpeedyNote package from PDF
-# Icon=speedynote
-# Profiles=profile-zero;
-# 
-# [X-Action-Profile profile-zero]
-# MimeTypes=application/pdf;
-# Exec=sh -c 'for file in %F; do if [[ "$file" == *.pdf ]]; then dir=$(dirname "$file"); base=$(basename "$file" .pdf); speedynote --create-silent "$dir/$base.spn" "$file"; fi; done'
-# Name=Create SpeedyNote Package
-# EOF
-# }
+# Function to create file manager integration scripts
+create_file_manager_integration() {
+    local pkg_dir="$1"
+    
+    # Create Nautilus (GNOME) script for "Create SpeedyNote Package"
+    mkdir -p "$pkg_dir/usr/share/nautilus/scripts"
+    cat > "$pkg_dir/usr/share/nautilus/scripts/Create SpeedyNote Package" << 'EOF'
+#!/bin/bash
+# Nautilus script to create SpeedyNote package from PDF
+
+if [ -n "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
+    while IFS= read -r file; do
+        if [[ "$file" == *.pdf ]]; then
+            # Extract directory and filename
+            dir=$(dirname "$file")
+            basename=$(basename "$file" .pdf)
+            spn_path="$dir/$basename.spn"
+            
+            # Create SpeedyNote package
+            speedynote --create-silent "$spn_path" "$file"
+        fi
+    done <<< "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
+fi
+EOF
+    chmod +x "$pkg_dir/usr/share/nautilus/scripts/Create SpeedyNote Package"
+    
+    # Create Dolphin (KDE) service menu
+    mkdir -p "$pkg_dir/usr/share/kservices5/ServiceMenus"
+    cat > "$pkg_dir/usr/share/kservices5/ServiceMenus/speedynote-create-package.desktop" << 'EOF'
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=application/pdf;
+Actions=CreateSpeedyNotePackage;
+
+[Desktop Action CreateSpeedyNotePackage]
+Name=Create SpeedyNote Package
+Name[es]=Crear Paquete SpeedyNote
+Name[fr]=Créer un Package SpeedyNote
+Name[zh]=创建 SpeedyNote 包
+Icon=speedynote
+Exec=sh -c 'dir=$(dirname "%f"); base=$(basename "%f" .pdf); speedynote --create-silent "$dir/$base.spn" "%f"'
+EOF
+    
+    # Create Thunar (XFCE) custom action
+    mkdir -p "$pkg_dir/usr/share/Thunar/sendto"
+    cat > "$pkg_dir/usr/share/Thunar/sendto/speedynote-create-package.desktop" << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Create SpeedyNote Package
+Name[es]=Crear Paquete SpeedyNote
+Name[fr]=Créer un Package SpeedyNote
+Name[zh]=创建 SpeedyNote 包
+Comment=Create a SpeedyNote package from PDF
+Icon=speedynote
+Exec=sh -c 'for file in %F; do if [[ "$file" == *.pdf ]]; then dir=$(dirname "$file"); base=$(basename "$file" .pdf); speedynote --create-silent "$dir/$base.spn" "$file"; fi; done'
+MimeType=application/pdf;
+Categories=Office;
+EOF
+
+    # Create PCManFM (LXDE/LXQt) action
+    mkdir -p "$pkg_dir/usr/share/file-manager/actions"
+    cat > "$pkg_dir/usr/share/file-manager/actions/speedynote-create-package.desktop" << 'EOF'
+[Desktop Entry]
+Type=Action
+Name=Create SpeedyNote Package
+Name[es]=Crear Paquete SpeedyNote
+Name[fr]=Créer un Package SpeedyNote
+Name[zh]=创建 SpeedyNote 包
+Comment=Create a SpeedyNote package from PDF
+Icon=speedynote
+Profiles=profile-zero;
+
+[X-Action-Profile profile-zero]
+MimeTypes=application/pdf;
+Exec=sh -c 'for file in %F; do if [[ "$file" == *.pdf ]]; then dir=$(dirname "$file"); base=$(basename "$file" .pdf); speedynote --create-silent "$dir/$base.spn" "$file"; fi; done'
+Name=Create SpeedyNote Package
+EOF
+}
 
 # Function to create DEB package
 create_deb_package() {
@@ -537,7 +538,7 @@ create_deb_package() {
     cat > "$PKG_DIR/DEBIAN/control" << EOF
 Package: $PKGNAME
 Version: $PKGVER-$PKGREL
-Architecture: $(dpkg --print-architecture)
+Architecture: amd64
 Maintainer: $MAINTAINER
 Depends: $(get_dependencies deb)
 Section: editors
@@ -594,22 +595,25 @@ EOF
     cp resources/icons/mainicon.png "$PKG_DIR/usr/share/pixmaps/speedynote.png"
     cp README.md "$PKG_DIR/usr/share/doc/$PKGNAME/"
     
-    # Install translation files
-    mkdir -p "$PKG_DIR/usr/share/speedynote/translations"
-    if [ -d "resources/translations" ]; then
-        cp resources/translations/*.qm "$PKG_DIR/usr/share/speedynote/translations/" 2>/dev/null || true
-    fi
-    
     # Create desktop file with PDF association
     create_desktop_file "$PKG_DIR/usr/share/applications/speedynote.desktop"
+    
+    # Create PDF-to-SPN action file
+    create_pdf_action_file "$PKG_DIR/usr/share/applications/speedynote-pdf-action.desktop"
     
     # Create MIME type definition for .spn files
     create_mime_xml "$PKG_DIR/usr/share/mime/packages/application-x-speedynote-package.xml"
     
+    # Create file manager integrations
+    create_file_manager_integration "$PKG_DIR"
+    
+    # Create file templates for "New" context menu
+    create_file_templates "$PKG_DIR"
+    
     # Build package
-    dpkg-deb --build "$PKG_DIR" "${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb"
-
-    echo -e "${GREEN}DEB package created: ${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb${NC}"
+    dpkg-deb --build "$PKG_DIR" "${PKGNAME}_${PKGVER}-${PKGREL}_amd64.deb"
+    
+    echo -e "${GREEN}DEB package created: ${PKGNAME}_${PKGVER}-${PKGREL}_amd64.deb${NC}"
 }
 
 # Function to create RPM package
@@ -668,13 +672,13 @@ install -m755 %{_vpath_builddir}/NoteApp %{buildroot}/usr/bin/speedynote
 install -m644 resources/icons/mainicon.png %{buildroot}/usr/share/pixmaps/speedynote.png
 install -m644 README.md %{buildroot}/usr/share/doc/%{name}/
 
-# Install translation files
-mkdir -p %{buildroot}/usr/share/speedynote/translations
-if [ -d "resources/translations" ]; then
-    cp resources/translations/*.qm %{buildroot}/usr/share/speedynote/translations/ 2>/dev/null || true
-fi
-
-# File manager integrations removed - using launcher instead
+# Create file manager integrations
+mkdir -p %{buildroot}/usr/share/nautilus/scripts
+mkdir -p %{buildroot}/usr/share/kservices5/ServiceMenus
+mkdir -p %{buildroot}/usr/share/Thunar/sendto
+mkdir -p %{buildroot}/usr/share/file-manager/actions
+mkdir -p %{buildroot}/usr/share/templates
+mkdir -p %{buildroot}/usr/share/nautilus-python/extensions
 
 cat > %{buildroot}/usr/share/applications/speedynote.desktop << EOFDESKTOP
 [Desktop Entry]
@@ -708,6 +712,39 @@ cat > %{buildroot}/usr/share/mime/packages/application-x-speedynote-package.xml 
 </mime-info>
 EOFMIME
 
+# Create Nautilus script
+cat > %{buildroot}/usr/share/nautilus/scripts/Create\ SpeedyNote\ Package << EOFNAUTILUS
+#!/bin/bash
+if [ -n "\$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
+    while IFS= read -r file; do
+        if [[ "\$file" == *.pdf ]]; then
+            dir=\$(dirname "\$file")
+            basename=\$(basename "\$file" .pdf)
+            spn_path="\$dir/\$basename.spn"
+            speedynote --create-silent "\$spn_path" "\$file"
+        fi
+    done <<< "\$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
+fi
+EOFNAUTILUS
+chmod +x %{buildroot}/usr/share/nautilus/scripts/Create\ SpeedyNote\ Package
+
+# Create KDE service menu
+cat > %{buildroot}/usr/share/kservices5/ServiceMenus/speedynote-create-package.desktop << EOFKDE
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=application/pdf;
+Actions=CreateSpeedyNotePackage;
+
+[Desktop Action CreateSpeedyNotePackage]
+Name=Create SpeedyNote Package
+Icon=speedynote
+Exec=sh -c 'dir=\$(dirname "%f"); base=\$(basename "%f" .pdf); speedynote --create-silent "\$dir/\$base.spn" "%f"'
+EOFKDE
+
+# Create .spn template
+echo "Contents" > %{buildroot}/usr/share/templates/Empty\ SpeedyNote\ Package.spn
+
 %post
 /usr/bin/update-desktop-database -q /usr/share/applications || :
 /usr/bin/update-mime-database /usr/share/mime &> /dev/null || :
@@ -722,7 +759,9 @@ EOFMIME
 /usr/share/pixmaps/speedynote.png
 /usr/share/doc/%{name}/README.md
 /usr/share/mime/packages/application-x-speedynote-package.xml
-/usr/share/speedynote/translations/
+/usr/share/nautilus/scripts/Create\ SpeedyNote\ Package
+/usr/share/kservices5/ServiceMenus/speedynote-create-package.desktop
+/usr/share/templates/Empty\ SpeedyNote\ Package.spn
 
 %changelog
 * $(date '+%a %b %d %Y') $MAINTAINER - $PKGVER-$PKGREL
@@ -733,7 +772,7 @@ EOF
     rpmbuild -ba ~/rpmbuild/SPECS/${PKGNAME}.spec
     
     # Copy to current directory
-    cp ~/rpmbuild/RPMS/${PKGARCH}/${PKGNAME}-${PKGVER}-${PKGREL}.*.rpm .
+    cp ~/rpmbuild/RPMS/x86_64/${PKGNAME}-${PKGVER}-${PKGREL}.*.rpm .
     
     echo -e "${GREEN}RPM package created: ${PKGNAME}-${PKGVER}-${PKGREL}.*.rpm${NC}"
 }
@@ -759,7 +798,7 @@ pkgname=$PKGNAME
 pkgver=$PKGVER
 pkgrel=$PKGREL
 pkgdesc="$DESCRIPTION"
-arch=("$PKGARCH")
+arch=('x86_64')
 url="$URL"
 license=('MIT')
 depends=($(get_dependencies arch | tr ',' ' '))
@@ -778,16 +817,6 @@ package() {
     install -Dm755 "build/NoteApp" "\$pkgdir/usr/bin/speedynote"
     install -Dm644 "resources/icons/mainicon.png" "\$pkgdir/usr/share/pixmaps/speedynote.png"
     install -Dm644 README.md "\$pkgdir/usr/share/doc/\$pkgname/README.md"
-    
-    # Install translation files
-    if [ -d "resources/translations" ]; then
-        install -dm755 "\$pkgdir/usr/share/speedynote/translations"
-        for qm_file in resources/translations/*.qm; do
-            if [ -f "\$qm_file" ]; then
-                install -m644 "\$qm_file" "\$pkgdir/usr/share/speedynote/translations/"
-            fi
-        done
-    fi
     
     install -Dm644 /dev/stdin "\$pkgdir/usr/share/applications/speedynote.desktop" << EOFDESKTOP
 [Desktop Entry]
@@ -820,6 +849,37 @@ EOFDESKTOP
     </mime-type>
 </mime-info>
 EOFMIME
+
+    # Create file manager integrations
+    install -Dm755 /dev/stdin "\$pkgdir/usr/share/nautilus/scripts/Create SpeedyNote Package" << EOFNAUTILUS
+#!/bin/bash
+if [ -n "\\\$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
+    while IFS= read -r file; do
+        if [[ "\\\$file" == *.pdf ]]; then
+            dir=\\\$(dirname "\\\$file")
+            basename=\\\$(basename "\\\$file" .pdf)
+            spn_path="\\\$dir/\\\$basename.spn"
+            speedynote --create-silent "\\\$spn_path" "\\\$file"
+        fi
+    done <<< "\\\$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
+fi
+EOFNAUTILUS
+
+    install -Dm644 /dev/stdin "\$pkgdir/usr/share/kservices5/ServiceMenus/speedynote-create-package.desktop" << EOFKDE
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=application/pdf;
+Actions=CreateSpeedyNotePackage;
+
+[Desktop Action CreateSpeedyNotePackage]
+Name=Create SpeedyNote Package
+Icon=speedynote
+Exec=sh -c 'dir=\\\$(dirname "%f"); base=\\\$(basename "%f" .pdf); speedynote --create-silent "\\\$dir/\\\$base.spn" "%f"'
+EOFKDE
+
+    # Create .spn template
+    echo "Contents" | install -Dm644 /dev/stdin "\$pkgdir/usr/share/templates/Empty SpeedyNote Package.spn"
 }
 
 post_install() {
@@ -841,7 +901,7 @@ EOF
     # Build package
     makepkg -f
     
-    echo -e "${GREEN}Arch package created: ${PKGNAME}-${PKGVER}-${PKGREL}-${PKGARCH}.pkg.tar.zst${NC}"
+    echo -e "${GREEN}Arch package created: ${PKGNAME}-${PKGVER}-${PKGREL}-x86_64.pkg.tar.zst${NC}"
 }
 
 # Function to create Alpine package
@@ -852,23 +912,6 @@ create_apk_package() {
     mkdir -p alpine-pkg
     cd alpine-pkg
     
-    # Create source tarball first to calculate checksum
-    cd ..
-    tar -czf "alpine-pkg/${PKGNAME}-${PKGVER}.tar.gz" \
-        --exclude=build \
-        --exclude=.git* \
-        --exclude=alpine-pkg \
-        --exclude="*.rpm" \
-        --exclude="*.deb" \
-        --exclude="*.pkg.tar.zst" \
-        --exclude="*.apk" \
-        .
-    
-    cd alpine-pkg
-    
-    # Calculate checksum
-    CHECKSUM=$(sha256sum "${PKGNAME}-${PKGVER}.tar.gz" | cut -d' ' -f1)
-    
     # Create APKBUILD
     cat > APKBUILD << EOF
 # Maintainer: $MAINTAINER
@@ -877,14 +920,13 @@ pkgver=$PKGVER
 pkgrel=$PKGREL
 pkgdesc="$DESCRIPTION"
 url="$URL"
-arch="all"
+arch="aarch64"
 license="MIT"
 depends="$(get_dependencies apk)"
 makedepends="$(get_build_dependencies apk)"
 source="\$pkgname-\$pkgver.tar.gz"
 builddir="\$srcdir"
 install="\$pkgname.post-install"
-sha256sums="$CHECKSUM"
 
 build() {
     cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
@@ -895,16 +937,6 @@ package() {
     install -Dm755 "build/NoteApp" "\$pkgdir/usr/bin/speedynote"
     install -Dm644 "resources/icons/mainicon.png" "\$pkgdir/usr/share/pixmaps/speedynote.png"
     install -Dm644 README.md "\$pkgdir/usr/share/doc/\$pkgname/README.md"
-    
-    # Install translation files
-    if [ -d "resources/translations" ]; then
-        install -dm755 "\$pkgdir/usr/share/speedynote/translations"
-        for qm_file in resources/translations/*.qm; do
-            if [ -f "\$qm_file" ]; then
-                install -m644 "\$qm_file" "\$pkgdir/usr/share/speedynote/translations/"
-            fi
-        done
-    fi
     
     install -Dm644 /dev/stdin "\$pkgdir/usr/share/applications/speedynote.desktop" << EOFDESKTOP
 [Desktop Entry]
@@ -937,6 +969,24 @@ EOFDESKTOP
     </mime-type>
 </mime-info>
 EOFMIME
+
+    # Create file manager integrations
+    install -Dm755 /dev/stdin "\$pkgdir/usr/share/nautilus/scripts/Create SpeedyNote Package" << EOFNAUTILUS
+#!/bin/bash
+if [ -n "\\\$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" ]; then
+    while IFS= read -r file; do
+        if [[ "\\\$file" == *.pdf ]]; then
+            dir=\\\$(dirname "\\\$file")
+            basename=\\\$(basename "\\\$file" .pdf)
+            spn_path="\\\$dir/\\\$basename.spn"
+            speedynote --create-silent "\\\$spn_path" "\\\$file"
+        fi
+    done <<< "\\\$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
+fi
+EOFNAUTILUS
+
+    # Create .spn template
+    echo "Contents" | install -Dm644 /dev/stdin "\$pkgdir/usr/share/templates/Empty SpeedyNote Package.spn"
 }
 EOF
     
@@ -951,10 +1001,19 @@ update-mime-database /usr/share/mime 2>/dev/null || true
 exit 0
 EOF
     
-    # Build package (source tarball already created above)
+    # Create source tarball
+    cd ..
+    tar -czf "alpine-pkg/${PKGNAME}-${PKGVER}.tar.gz" \
+        --exclude=build \
+        --exclude=.git* \
+        --exclude=alpine-pkg \
+        .
+    
+    cd alpine-pkg
+    
+    # Build package
     abuild -r
     
-    cd ..
     echo -e "${GREEN}Alpine package created in ~/packages/alpine-pkg/${PKGNAME}/ for .apk file"
 }
 
@@ -980,8 +1039,8 @@ show_package_info() {
     for format in "${PACKAGE_FORMATS[@]}"; do
         case $format in
             deb)
-                if [[ -f "${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb" ]]; then
-                    echo -e "DEB: ${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb ($(du -h "${PKGNAME}_${PKGVER}-${PKGREL}_$(dpkg --print-architecture).deb" | cut -f1))"
+                if [[ -f "${PKGNAME}_${PKGVER}-${PKGREL}_amd64.deb" ]]; then
+                    echo -e "DEB: ${PKGNAME}_${PKGVER}-${PKGREL}_amd64.deb ($(du -h "${PKGNAME}_${PKGVER}-${PKGREL}_amd64.deb" | cut -f1))"
                 fi
                 ;;
             rpm)
@@ -991,8 +1050,8 @@ show_package_info() {
                 fi
                 ;;
             arch)
-                if [[ -f "${PKGNAME}-${PKGVER}-${PKGREL}-${PKGARCH}.pkg.tar.zst" ]]; then
-                    echo -e "Arch: ${PKGNAME}-${PKGVER}-${PKGREL}-${PKGARCH}.pkg.tar.zst ($(du -h "${PKGNAME}-${PKGVER}-${PKGREL}-${PKGARCH}.pkg.tar.zst" | cut -f1))"
+                if [[ -f "${PKGNAME}-${PKGVER}-${PKGREL}-x86_64.pkg.tar.zst" ]]; then
+                    echo -e "Arch: ${PKGNAME}-${PKGVER}-${PKGREL}-x86_64.pkg.tar.zst ($(du -h "${PKGNAME}-${PKGVER}-${PKGREL}-x86_64.pkg.tar.zst" | cut -f1))"
                 fi
                 ;;
             apk)
@@ -1002,10 +1061,12 @@ show_package_info() {
     done
     
     echo
-    echo -e "${CYAN}=== File Association ===${NC}"
+    echo -e "${CYAN}=== File Manager Integration ===${NC}"
     echo -e "✅ PDF Association: SpeedyNote available in 'Open with' menu for PDF files"
+    echo -e "✅ Right-click PDF: 'Create SpeedyNote Package' context menu action"
+    echo -e "✅ New File Template: Create .spn packages from file manager 'New' menu"
+    echo -e "✅ Multi-Desktop Support: Nautilus (GNOME), Dolphin (KDE), Thunar (XFCE), PCManFM (LXDE/LXQt)"
     echo -e "✅ .spn Package Association: Double-click .spn files to open in SpeedyNote"
-    echo -e "✅ Launcher Integration: Use SpeedyNote launcher for creating new packages and managing documents"
 }
 
 # Main execution
